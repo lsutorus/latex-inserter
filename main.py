@@ -68,7 +68,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 APP_DATA_FOLDER = "LaTeX-Overlay-Utility"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-inserter-icon.ico"

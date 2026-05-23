@@ -11,7 +11,7 @@ import shutil
 import tempfile
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QPainter, QBrush, QColor, QPen
+from PyQt5.QtGui import QIcon, QPainter, QBrush, QColor, QPen, QPalette
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QProgressBar, QHBoxLayout, QSizePolicy
 )
@@ -168,11 +168,9 @@ def perform_update(update_info, current_pid, current_exe):
             "Reinstall the application to restore the helper."
         )
 
-    import subprocess
-    subprocess.Popen(
-        [helper_path, "--pid", str(current_pid), "--src", new_exe_path, "--dst", current_exe],
-        close_fds=True
-    )
+    import ctypes
+    params = f'--pid {current_pid} --src "{new_exe_path}" --dst "{current_exe}"'
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", helper_path, params, None, 0)
 
 
 DIALOG_BASE_STYLE = """
@@ -371,6 +369,9 @@ class UpdateDialog(_FramelessDialog):
         changelog_label.setWordWrap(True)
         changelog_label.setTextFormat(Qt.MarkdownText)
         changelog_label.setStyleSheet("color: #aaa; margin: 8px 0;")
+        palette = changelog_label.palette()
+        palette.setColor(QPalette.LinkText, QColor("#f90"))
+        changelog_label.setPalette(palette)
         layout.addWidget(changelog_label)
 
         self.progress = QProgressBar()
