@@ -68,9 +68,10 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 APP_DATA_FOLDER = "LaTeX-Overlay-Utility"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
+ICON_FILENAME = "LaTeX-inserter-icon.ico"
 
 # This is the exact grammar used by the unicodeitplus library.
 # By using it, we ensure our custom parser behaves identically.
@@ -120,6 +121,7 @@ class LaTeXOverlay(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFixedSize(450, 195)
         self.setWindowTitle("LaTeX to Unicode Inserter")
+        self.setWindowIcon(QIcon(resource_path(ICON_FILENAME)))
         self.last_active_window = None
         self.drag_position = None
         self.setup_ui()
@@ -426,10 +428,6 @@ class AppManager(QObject):
                 return
         try:
             os.startfile(self.custom_mappings_path)
-            QMessageBox.information(None, "File Opened",
-                                    "The custom mappings file has been opened.\n\n"
-                                    "After saving your changes, use the 'Reload Mappings' "
-                                    "option in the tray menu to apply them.")
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Could not open mappings file:\n{e}")
 
@@ -491,7 +489,7 @@ class AppManager(QObject):
                                                      win.input_box.setFocus(Qt.ActiveWindowFocusReason)))
 
     def check_for_updates(self):
-        from updater import fetch_latest_release, parse_version, UpdateDialog
+        from updater import fetch_latest_release, parse_version, UpdateDialog, UpToDateDialog
         try:
             update_info = fetch_latest_release(__version__)
         except Exception as e:
@@ -499,16 +497,14 @@ class AppManager(QObject):
                                 f"Could not check for updates:\n{e}")
             return
         if update_info is None:
-            QMessageBox.information(None, "Up to Date",
-                                    "You are running the latest version.")
+            UpToDateDialog(__version__).exec_()
             return
         current = parse_version(__version__)
         latest = parse_version(update_info.version)
         if latest <= current:
-            QMessageBox.information(None, "Up to Date",
-                                    "You are running the latest version.")
+            UpToDateDialog(__version__).exec_()
             return
-        dialog = UpdateDialog(update_info)
+        dialog = UpdateDialog(update_info, current_version=__version__)
         if dialog.exec_() == 1:  # QDialog.Accepted
             from updater import perform_update
             try:
@@ -522,7 +518,7 @@ class AppManager(QObject):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    ICON_FILENAME = "LaTeX-inserter-icon.ico"
+    app.setWindowIcon(QIcon(resource_path(ICON_FILENAME)))
     print("Checking for administrator privileges...")
     try:
         keyboard.is_pressed('ctrl')

@@ -11,8 +11,9 @@ import shutil
 import tempfile
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPainter, QBrush, QColor, QPen
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QProgressBar, QHBoxLayout
+    QDialog, QVBoxLayout, QLabel, QPushButton, QProgressBar, QHBoxLayout, QSizePolicy
 )
 
 GITHUB_API_URL = "https://api.github.com/repos/lsutorus/latex-inserter/releases/latest"
@@ -174,23 +175,197 @@ def perform_update(update_info, current_pid, current_exe):
     )
 
 
-class UpdateDialog(QDialog):
-    """Dialog showing available update with Install/Later buttons."""
+DIALOG_BASE_STYLE = """
+QDialog {
+    background-color: transparent;
+    font-family: Calibri;
+}
+QLabel {
+    color: #dcdcdc;
+    font-family: Calibri;
+}
+QPushButton {
+    background-color: #3c3c3c;
+    color: #dcdcdc;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 8px 20px;
+    font-size: 10pt;
+    font-family: Calibri;
+}
+QPushButton:hover {
+    background-color: #555;
+}
+QPushButton:disabled {
+    color: #666;
+    background-color: #333;
+}
+QProgressBar {
+    background-color: #3c3c3c;
+    border: 1px solid #555;
+    border-radius: 4px;
+    text-align: center;
+    color: #dcdcdc;
+    font-family: Calibri;
+}
+QProgressBar::chunk {
+    background-color: #0078d7;
+    border-radius: 3px;
+}
+"""
 
-    def __init__(self, update_info, parent=None):
+
+class _FramelessDialog(QDialog):
+    """Base class for frameless dark-themed dialogs with rounded corners."""
+
+    _BG_COLOR = QColor(43, 43, 43, 235)
+    _RADIUS = 10
+
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.update_info = update_info
-        self.setWindowTitle("Update Available")
-        self.setFixedSize(460, 320)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Dialog)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet(DIALOG_BASE_STYLE)
+        self._drag_pos = None
+        try:
+            from main import resource_path, ICON_FILENAME
+            self.setWindowIcon(QIcon(resource_path(ICON_FILENAME)))
+        except Exception:
+            pass
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(QBrush(self._BG_COLOR))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(self.rect(), self._RADIUS, self._RADIUS)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.reject()
+            return
+        super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self._drag_pos = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if self._drag_pos and event.buttons() == Qt.LeftButton:
+            self.move(event.globalPos() - self._drag_pos)
+            event.accept()
+
+    def _make_close_btn(self):
+        btn = QPushButton("X")
+        btn.setFixedSize(28, 28)
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #999;
+                border: none;
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                color: #f44;
+                background-color: rgba(255,255,255,30);
+                border-radius: 4px;
+            }
+        """)
+        btn.clicked.connect(self.reject)
+        return btn
+
+
+class UpToDateDialog(_FramelessDialog):
+    """Themed dialog shown when app is already up to date."""
+
+    def __init__(self, current_version, parent=None):
+        super().__init__(parent)
+        self.current_version = current_version
+        self.setFixedSize(360, 180)
         self._build_ui()
 
     def _build_ui(self):
         layout = QVBoxLayout()
+        layout.setContentsMargins(24, 12, 24, 16)
+
+        # Close button row
+        close_row = QHBoxLayout()
+        close_row.addStretch()
+        close_row.addWidget(self._make_close_btn())
+        layout.addLayout(close_row)
+
+        title = QLabel("You are running the latest version")
+        title.setStyleSheet("font-size: 13pt; font-weight: bold; color: #dcdcdc;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        version_label = QLabel(f"LaTeX Inserter v{self.current_version}")
+        version_label.setStyleSheet("font-size: 10pt; color: #999;")
+        version_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(version_label)
+
+        layout.addStretch()
+
+        ok_btn = QPushButton("OK")
+        ok_btn.setFixedHeight(40)
+        ok_btn.setCursor(Qt.PointingHandCursor)
+        ok_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2d7d46;
+                color: #fff;
+                border: none;
+                border-radius: 5px;
+                padding: 10px 32px;
+                font-size: 11pt;
+                font-weight: bold;
+                font-family: Calibri;
+            }
+            QPushButton:hover {
+                background-color: #3da85a;
+            }
+            QPushButton:pressed {
+                background-color: #256f3a;
+            }
+        """)
+        ok_btn.clicked.connect(self.accept)
+        ok_btn.setDefault(True)
+        layout.addWidget(ok_btn)
+
+        self.setLayout(layout)
+
+
+class UpdateDialog(_FramelessDialog):
+    """Themed dialog showing available update with Install/Later buttons."""
+
+    def __init__(self, update_info, current_version=None, parent=None):
+        super().__init__(parent)
+        self.update_info = update_info
+        self.current_version = current_version
+        self.setFixedSize(460, 340)
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 12, 20, 16)
+
+        # Close button row
+        close_row = QHBoxLayout()
+        close_row.addStretch()
+        close_row.addWidget(self._make_close_btn())
+        layout.addLayout(close_row)
 
         title = QLabel(f"Version {self.update_info.version} is available")
-        title.setFont(title.font())
-        title.setStyleSheet("font-size: 14pt; font-weight: bold;")
+        title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #dcdcdc;")
         layout.addWidget(title)
+
+        if self.current_version:
+            cur_label = QLabel(f"Current: LaTeX Inserter v{self.current_version}")
+            cur_label.setStyleSheet("font-size: 9pt; color: #999;")
+            layout.addWidget(cur_label)
 
         changelog_label = QLabel(self.update_info.changelog or "No changelog.")
         changelog_label.setWordWrap(True)
@@ -210,8 +385,32 @@ class UpdateDialog(QDialog):
         btn_layout = QHBoxLayout()
         self.install_btn = QPushButton("Install Update")
         self.install_btn.setDefault(True)
+        self.install_btn.setCursor(Qt.PointingHandCursor)
+        self.install_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d7;
+                color: #fff;
+                border: none;
+                border-radius: 5px;
+                padding: 8px 24px;
+                font-size: 10pt;
+                font-weight: bold;
+                font-family: Calibri;
+            }
+            QPushButton:hover {
+                background-color: #1a8ae8;
+            }
+            QPushButton:pressed {
+                background-color: #005a9e;
+            }
+            QPushButton:disabled {
+                background-color: #333;
+                color: #666;
+            }
+        """)
         self.install_btn.clicked.connect(self._on_install)
         self.later_btn = QPushButton("Later")
+        self.later_btn.setCursor(Qt.PointingHandCursor)
         self.later_btn.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(self.later_btn)
@@ -223,6 +422,7 @@ class UpdateDialog(QDialog):
     def _on_install(self):
         self.install_btn.setEnabled(False)
         self.later_btn.setEnabled(False)
+        self.close_btn_enabled = False
         self.progress.show()
         self.status_label.setText("Downloading update...")
 
@@ -233,7 +433,6 @@ class UpdateDialog(QDialog):
             QCoreApplication.processEvents()
 
         try:
-            # Download + verify
             os.makedirs(UPDATE_TEMP_DIR, exist_ok=True)
             new_exe = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe")
             sha_file = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe.sha256")
@@ -262,14 +461,12 @@ class UpdateDialog(QDialog):
                 self.progress.hide()
                 return
 
-            # Launch helper and quit
             self.status_label.setText("Installing... the app will restart shortly.")
             QCoreApplication.processEvents()
 
             perform_update(
                 self.update_info, os.getpid(), sys.executable
             )
-            # If perform_update didn't raise, accept dialog and quit app
             self.accept()
             from PyQt5.QtWidgets import QApplication
             QApplication.quit()
