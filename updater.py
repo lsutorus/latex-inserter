@@ -1,6 +1,7 @@
 # updater.py — Self-update logic for LaTeX-Inserter
 
 import urllib.request
+import urllib.error
 import json
 import hashlib
 import os
@@ -43,13 +44,19 @@ def fetch_latest_release(current_version):
     Query GitHub Releases API. Returns UpdateInfo if a newer version exists,
     None if current is up to date. Raises on network/API errors.
     """
-    ctx = ssl.create_default_context(minimum_version=ssl.TLSVersion.TLSv1_2)
+    ctx = ssl.create_default_context()
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     req = urllib.request.Request(
         GITHUB_API_URL,
         headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"}
     )
-    with urllib.request.urlopen(req, context=ctx) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, context=ctx) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None  # no releases yet
+        raise
 
     tag_name = data.get("tag_name", "")
     remote_version = tag_name.lstrip("v")
@@ -79,7 +86,8 @@ def fetch_latest_release(current_version):
 def download_file(url, dest, progress_callback=None):
     """Download url to dest. Reports progress via callback(0.0-1.0)."""
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    ctx = ssl.create_default_context(minimum_version=ssl.TLSVersion.TLSv1_2)
+    ctx = ssl.create_default_context()
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, context=ctx) as resp:
