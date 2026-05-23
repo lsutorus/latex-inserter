@@ -6,3 +6,4 @@ dist/
 desktop.ini
 *.pyc
 .claude/
+update_helper.exe

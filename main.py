@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import ctypes
+import shutil
 
 # --- unicodeitplus components we need to build our own parser ---
 from lark import Lark
@@ -67,6 +68,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
+__version__ = "1.0.0"
 APP_DATA_FOLDER = "LaTeX-Overlay-Utility"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 
@@ -331,6 +333,16 @@ class AppManager(QObject):
         self.latex_commands = []
         self.custom_mappings_path = self._get_custom_mappings_path()
         self.load_mappings()
+
+        # Cleanup stale files from previous update
+        if getattr(sys, 'frozen', False):
+            bak = sys.executable + ".bak"
+            if os.path.exists(bak):
+                try: os.remove(bak)
+                except: pass
+        from updater import UPDATE_TEMP_DIR
+        if os.path.exists(UPDATE_TEMP_DIR):
+            shutil.rmtree(UPDATE_TEMP_DIR, ignore_errors=True)
         self.timer = QTimer()
         self.timer.setInterval(50)
         self.timer.timeout.connect(self.check_hotkey)
@@ -478,6 +490,34 @@ class AppManager(QObject):
                 QTimer.singleShot(delay_ms, lambda: (force_foreground_qt_window(win),
                                                      win.input_box.setFocus(Qt.ActiveWindowFocusReason)))
 
+    def check_for_updates(self):
+        from updater import fetch_latest_release, parse_version, UpdateDialog
+        try:
+            update_info = fetch_latest_release(__version__)
+        except Exception as e:
+            QMessageBox.warning(None, "Update Check Failed",
+                                f"Could not check for updates:\n{e}")
+            return
+        if update_info is None:
+            QMessageBox.information(None, "Up to Date",
+                                    "You are running the latest version.")
+            return
+        current = parse_version(__version__)
+        latest = parse_version(update_info.version)
+        if latest <= current:
+            QMessageBox.information(None, "Up to Date",
+                                    "You are running the latest version.")
+            return
+        dialog = UpdateDialog(update_info)
+        if dialog.exec_() == 1:  # QDialog.Accepted
+            from updater import perform_update
+            try:
+                perform_update(update_info, os.getpid(), sys.executable)
+            except Exception as e:
+                QMessageBox.critical(None, "Update Failed", f"Update failed:\n{e}")
+                return
+            QApplication.quit()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -518,6 +558,11 @@ if __name__ == "__main__":
     reload_action = QAction("Reload Mappings")
     reload_action.triggered.connect(manager.load_mappings)
     menu.addAction(reload_action)
+    menu.addSeparator()
+
+    update_action = QAction("Check for Updates...")
+    update_action.triggered.connect(manager.check_for_updates)
+    menu.addAction(update_action)
     menu.addSeparator()
     quit_action = QAction("Quit")
     quit_action.triggered.connect(app.quit)

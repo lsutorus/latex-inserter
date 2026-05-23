@@ -1,6 +1,7 @@
 import PyInstaller.__main__
 import os
 import shutil
+import subprocess
 import sys
 import unicodeitplus
 
@@ -62,3 +63,31 @@ try:
 
 except Exception as e:
     print(f"\nAn error occurred during the build process: {e}")
+    sys.exit(1)
+
+
+# --- Step 5: Compile update_helper.c ---
+HELPER_SRC = "update_helper.c"
+HELPER_EXE = "dist/update_helper.exe"
+
+print("\nCompiling update_helper.exe...")
+gcc_check = subprocess.run(["gcc", "--version"], capture_output=True)
+if gcc_check.returncode != 0:
+    print("ERROR: GCC not found. Install MinGW-w64 and add to PATH.")
+    print("Download from: https://www.mingw-w64.org/")
+    sys.exit(1)
+
+if not os.path.exists(HELPER_SRC):
+    print(f"ERROR: '{HELPER_SRC}' not found.")
+    sys.exit(1)
+
+result = subprocess.run(
+    ["gcc", "-o", HELPER_EXE, HELPER_SRC, "-lkernel32", "-mwindows", "-Os", "-s"],
+    capture_output=True, text=True
+)
+if result.returncode != 0:
+    print(f"ERROR: Failed to compile update_helper.c:\n{result.stderr}")
+    sys.exit(1)
+
+print(f"update_helper.exe compiled to {HELPER_EXE}")
+print("\nAll build artifacts are in the 'dist' folder.")
