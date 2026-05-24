@@ -68,7 +68,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 APP_DATA_FOLDER = "LaTeX-Overlay-Utility"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-inserter-icon.ico"
@@ -156,6 +156,12 @@ class LaTeXOverlay(QWidget):
         self.canvas_label.setFont(QFont("Segoe UI", 24))
         self.layout.addWidget(self.input_box)
         self.layout.addWidget(self.canvas_label)
+
+        self.version_label = QLabel(f"v{__version__}")
+        self.version_label.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.version_label.setStyleSheet("color: #666; font-size: 7pt; margin: 0px;")
+        self.version_label.setFixedHeight(12)
+        self.layout.addWidget(self.version_label)
 
     def setup_dark_theme_styles(self):
         self.setStyleSheet("""
