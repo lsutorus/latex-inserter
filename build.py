@@ -7,7 +7,6 @@ import re
 import unicodeitplus
 
 # --- CONFIGURATION ---
-# Define your specific icon filename here.
 ICON_FILENAME = "LaTeX-inserter-icon.ico"
 
 
@@ -19,7 +18,7 @@ for folder in ['build', 'dist', 'main.spec']:
             if os.path.isdir(folder):
                 shutil.rmtree(folder)
             else:
-                os.remove(folder)  # Also remove the .spec file
+                os.remove(folder)
             print(f"Removed old '{folder}'.")
         except OSError as e:
             print(f"Error removing {folder}: {e}")
@@ -39,12 +38,10 @@ if not os.path.exists('installer.iss'):
 
 
 # --- Step 3: Dynamically find paths for data ---
-# For unicodeitplus data
 package_path = unicodeitplus.__path__[0]
 add_data_unicode = f'{package_path}{os.pathsep}unicodeitplus'
 print(f"Found unicodeitplus data at: {package_path}")
 
-# For the icon file
 add_data_icon = f'{ICON_FILENAME}{os.pathsep}.'
 print(f"Will bundle '{ICON_FILENAME}' for the system tray.")
 
@@ -74,11 +71,23 @@ except Exception as e:
 ISS_SCRIPT = "installer.iss"
 
 print("\nBuilding installer...")
-iscc_check = subprocess.run(["iscc", "--version"], capture_output=True)
+
+# Find iscc — it may not be on PATH after choco install
+iscc_exe = "iscc"
+iscc_check = subprocess.run([iscc_exe, "--version"], capture_output=True)
 if iscc_check.returncode != 0:
-    print("ERROR: Inno Setup Compiler (iscc) not found.")
-    print("Install via: choco install innosetup")
-    sys.exit(1)
+    # Try common Inno Setup install locations
+    for candidate in [
+        os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Inno Setup 6", "iscc.exe"),
+        os.path.join(os.environ.get("ProgramFiles", ""), "Inno Setup 6", "iscc.exe"),
+    ]:
+        if os.path.exists(candidate):
+            iscc_exe = candidate
+            break
+    else:
+        print("ERROR: Inno Setup Compiler (iscc) not found.")
+        print("Install via: choco install innosetup")
+        sys.exit(1)
 
 # Extract version from main.py
 with open("main.py", "r", encoding="utf-8") as f:
@@ -90,7 +99,7 @@ app_version = version_match.group(1)
 print(f"Building installer for version {app_version}...")
 
 result = subprocess.run(
-    ["iscc", f"/DAppVersion={app_version}", ISS_SCRIPT],
+    [iscc_exe, f"/DAppVersion={app_version}", ISS_SCRIPT],
     capture_output=True, text=True
 )
 if result.returncode != 0:
