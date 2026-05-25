@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import re
 import unicodeitplus
 
 # --- CONFIGURATION ---
@@ -18,7 +19,7 @@ for folder in ['build', 'dist', 'main.spec']:
             if os.path.isdir(folder):
                 shutil.rmtree(folder)
             else:
-                os.remove(folder) # Also remove the .spec file
+                os.remove(folder)  # Also remove the .spec file
             print(f"Removed old '{folder}'.")
         except OSError as e:
             print(f"Error removing {folder}: {e}")
@@ -31,6 +32,9 @@ if not os.path.exists(ICON_FILENAME):
     sys.exit(1)
 if not os.path.exists('admin.manifest'):
     print("ERROR: 'admin.manifest' not found. Please add it to the project folder.")
+    sys.exit(1)
+if not os.path.exists('installer.iss'):
+    print("ERROR: 'installer.iss' not found. Please add it to the project folder.")
     sys.exit(1)
 
 
@@ -50,12 +54,12 @@ print("\nStarting PyInstaller build...")
 try:
     PyInstaller.__main__.run([
         'main.py',
-        '--name=LaTeX-Inserter', # Set a nice name for the .exe
+        '--name=LaTeX-Inserter',
         '--onefile',
         '--noconsole',
-        f'--icon={ICON_FILENAME}', # Use the variable to set the EXE's file icon
+        f'--icon={ICON_FILENAME}',
         f'--add-data={add_data_unicode}',
-        f'--add-data={add_data_icon}', # Use the variable to bundle the icon
+        f'--add-data={add_data_icon}',
         '--hidden-import=keyboard._winkeyboard',
         '--manifest=admin.manifest'
     ])
@@ -66,28 +70,32 @@ except Exception as e:
     sys.exit(1)
 
 
-# --- Step 5: Compile update_helper.c ---
-HELPER_SRC = "update_helper.c"
-HELPER_EXE = "dist/update_helper.exe"
+# --- Step 5: Build installer with Inno Setup ---
+ISS_SCRIPT = "installer.iss"
 
-print("\nCompiling update_helper.exe...")
-gcc_check = subprocess.run(["gcc", "--version"], capture_output=True)
-if gcc_check.returncode != 0:
-    print("ERROR: GCC not found. Install MinGW-w64 and add to PATH.")
-    print("Download from: https://www.mingw-w64.org/")
+print("\nBuilding installer...")
+iscc_check = subprocess.run(["iscc", "--version"], capture_output=True)
+if iscc_check.returncode != 0:
+    print("ERROR: Inno Setup Compiler (iscc) not found.")
+    print("Install via: choco install innosetup")
     sys.exit(1)
 
-if not os.path.exists(HELPER_SRC):
-    print(f"ERROR: '{HELPER_SRC}' not found.")
+# Extract version from main.py
+with open("main.py", "r", encoding="utf-8") as f:
+    version_match = re.search(r'__version__\s*=\s*"([^"]+)"', f.read())
+if not version_match:
+    print("ERROR: Could not find __version__ in main.py")
     sys.exit(1)
+app_version = version_match.group(1)
+print(f"Building installer for version {app_version}...")
 
 result = subprocess.run(
-    ["gcc", "-o", HELPER_EXE, HELPER_SRC, "-lkernel32", "-mwindows", "-Os", "-s"],
+    ["iscc", f"/DAppVersion={app_version}", ISS_SCRIPT],
     capture_output=True, text=True
 )
 if result.returncode != 0:
-    print(f"ERROR: Failed to compile update_helper.c:\n{result.stderr}")
+    print(f"ERROR: Inno Setup compilation failed:\n{result.stderr}\n{result.stdout}")
     sys.exit(1)
 
-print(f"update_helper.exe compiled to {HELPER_EXE}")
+print("Installer built successfully.")
 print("\nAll build artifacts are in the 'dist' folder.")

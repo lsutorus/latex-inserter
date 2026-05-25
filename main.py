@@ -68,8 +68,8 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.2.0"
-APP_DATA_FOLDER = "LaTeX-Overlay-Utility"
+__version__ = "1.3.0"
+APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-inserter-icon.ico"
 
@@ -342,15 +342,11 @@ class AppManager(QObject):
         self.custom_mappings_path = self._get_custom_mappings_path()
         self.load_mappings()
 
-        # Cleanup stale files from previous update
+        # Cleanup stale temp files from previous update
         if getattr(sys, 'frozen', False):
-            bak = sys.executable + ".bak"
-            if os.path.exists(bak):
-                try: os.remove(bak)
-                except: pass
-        from updater import UPDATE_TEMP_DIR
-        if os.path.exists(UPDATE_TEMP_DIR):
-            shutil.rmtree(UPDATE_TEMP_DIR, ignore_errors=True)
+            from updater import UPDATE_TEMP_DIR
+            if os.path.exists(UPDATE_TEMP_DIR):
+                shutil.rmtree(UPDATE_TEMP_DIR, ignore_errors=True)
         self.timer = QTimer()
         self.timer.setInterval(50)
         self.timer.timeout.connect(self.check_hotkey)
@@ -514,7 +510,7 @@ class AppManager(QObject):
         if dialog.exec_() == 1:  # QDialog.Accepted
             from updater import perform_update
             try:
-                perform_update(update_info, os.getpid(), sys.executable)
+                perform_update(update_info)
             except Exception as e:
                 QMessageBox.critical(None, "Update Failed", f"Update failed:\n{e}")
                 return

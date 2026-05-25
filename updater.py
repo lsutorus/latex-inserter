@@ -23,10 +23,10 @@ USER_AGENT = "LaTeX-Inserter-Updater"
 
 class UpdateInfo:
     """Parsed result from the GitHub Releases API."""
-    def __init__(self, version, changelog, exe_url, sha256_url):
+    def __init__(self, version, changelog, installer_url, sha256_url):
         self.version = version          # "1.1.0" (no v prefix)
         self.changelog = changelog      # release body markdown
-        self.exe_url = exe_url          # browser_download_url for .exe
+        self.installer_url = installer_url  # browser_download_url for setup .exe
         self.sha256_url = sha256_url    # browser_download_url for .sha256
 
 
@@ -66,22 +66,22 @@ def fetch_latest_release(current_version):
 
     changelog = data.get("body", "") or "No changelog provided."
 
-    exe_url = None
+    installer_url = None
     sha256_url = None
     for asset in data.get("assets", []):
         name = asset.get("name", "")
         url = asset.get("browser_download_url", "")
-        if name == "LaTeX-Inserter.exe":
-            exe_url = url
-        elif name == "LaTeX-Inserter.exe.sha256":
+        if name == "LaTeX-Inserter-setup.exe":
+            installer_url = url
+        elif name == "LaTeX-Inserter-setup.exe.sha256":
             sha256_url = url
 
-    if not exe_url:
-        raise RuntimeError("Release has no LaTeX-Inserter.exe asset.")
+    if not installer_url:
+        raise RuntimeError("Release has no LaTeX-Inserter-setup.exe asset.")
     if not sha256_url:
         raise RuntimeError("Release has no SHA256 hash file asset.")
 
-    return UpdateInfo(remote_version, changelog, exe_url, sha256_url)
+    return UpdateInfo(remote_version, changelog, installer_url, sha256_url)
 
 
 def download_file(url, dest, progress_callback=None):
@@ -125,52 +125,19 @@ def verify_sha256(filepath, expected_hex):
     return h.hexdigest().lower() == expected_hex.lower()
 
 
-def perform_update(update_info, current_pid, current_exe):
+def perform_update(update_info):
     """
-    Full update sequence:
-    1. Download new exe + .sha256 to temp dir
-    2. Verify SHA256
-    3. Launch update_helper.exe
+    Launch the downloaded installer in /SILENT mode.
     Caller must call QApplication.quit() after this returns.
     """
-    os.makedirs(UPDATE_TEMP_DIR, exist_ok=True)
-    new_exe_path = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe")
-    sha256_path = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe.sha256")
-
-    download_file(update_info.exe_url, new_exe_path)
-    download_file(update_info.sha256_url, sha256_path)
-
-    # Parse expected hash from .sha256 file (sha256sum format: "hash  filename")
-    with open(sha256_path, "r") as f:
-        expected_hash = f.read().split()[0]
-
-    if not verify_sha256(new_exe_path, expected_hash):
-        # Clean up — don't leave unverified binary around
-        for p in (new_exe_path, sha256_path):
-            if os.path.exists(p):
-                try: os.remove(p)
-                except OSError: pass
-        raise RuntimeError(
-            "SHA256 verification failed.\n"
-            "The download may be corrupted or tampered with.\n"
-            "Update aborted for safety."
-        )
-
-    # Locate update_helper.exe — same directory as current exe
-    if getattr(sys, 'frozen', False):
-        helper_path = os.path.join(os.path.dirname(current_exe), "update_helper.exe")
-    else:
-        helper_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "update_helper.exe")
-
-    if not os.path.exists(helper_path):
-        raise FileNotFoundError(
-            f"Update helper not found at:\n{helper_path}\n\n"
-            "Reinstall the application to restore the helper."
-        )
+    installer_path = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter-setup.exe")
 
     import ctypes
-    params = f'--pid {current_pid} --src "{new_exe_path}" --dst "{current_exe}"'
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", helper_path, params, None, 0)
+    # /SILENT shows progress bar, no interaction needed
+    # /CLOSEAPPLICATIONS forces the running app to close
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", installer_path, "/SILENT /CLOSEAPPLICATIONS", None, 0
+    )
 
 
 DIALOG_BASE_STYLE = """
@@ -435,11 +402,11 @@ class UpdateDialog(_FramelessDialog):
 
         try:
             os.makedirs(UPDATE_TEMP_DIR, exist_ok=True)
-            new_exe = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe")
-            sha_file = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter.exe.sha256")
+            installer_path = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter-setup.exe")
+            sha_file = os.path.join(UPDATE_TEMP_DIR, "LaTeX-Inserter-setup.exe.sha256")
 
             download_file(
-                self.update_info.exe_url, new_exe,
+                self.update_info.installer_url, installer_path,
                 progress_callback=on_progress
             )
             download_file(self.update_info.sha256_url, sha_file)
@@ -450,8 +417,8 @@ class UpdateDialog(_FramelessDialog):
             with open(sha_file, "r") as f:
                 expected_hash = f.read().split()[0]
 
-            if not verify_sha256(new_exe, expected_hash):
-                for p in (new_exe, sha_file):
+            if not verify_sha256(installer_path, expected_hash):
+                for p in (installer_path, sha_file):
                     if os.path.exists(p):
                         try: os.remove(p)
                         except OSError: pass
@@ -465,9 +432,7 @@ class UpdateDialog(_FramelessDialog):
             self.status_label.setText("Installing... the app will restart shortly.")
             QCoreApplication.processEvents()
 
-            perform_update(
-                self.update_info, os.getpid(), sys.executable
-            )
+            perform_update(self.update_info)
             self.accept()
             from PyQt5.QtWidgets import QApplication
             QApplication.quit()

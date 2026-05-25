@@ -13,43 +13,42 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt pyinstaller
+    - name: Install dependencies
+      run: pip install -r requirements.txt pyinstaller
 
-      - name: Install MinGW
-        run: choco install mingw -y
+    - name: Install Inno Setup
+      run: choco install innosetup -y
 
-      - name: Build
-        run: python build.py
+    - name: Build
+      run: python build.py
 
-      - name: Compute SHA256
-        shell: pwsh
-        run: |
-          $hash = (Get-FileHash "dist\LaTeX-Inserter.exe" -Algorithm SHA256).Hash.ToLower()
-          "$hash  LaTeX-Inserter.exe" | Out-File -FilePath "dist\LaTeX-Inserter.exe.sha256" -Encoding ascii -NoNewline
+    - name: Compute SHA256
+      shell: pwsh
+      run: |
+        $hash = (Get-FileHash "dist\LaTeX-Inserter-setup.exe" -Algorithm SHA256).Hash.ToLower()
+        "$hash LaTeX-Inserter-setup.exe" | Out-File -FilePath "dist\LaTeX-Inserter-setup.exe.sha256" -Encoding ascii -NoNewline
 
-      - name: Verify SHA256
-        shell: pwsh
-        run: |
-          $line = Get-Content "dist\LaTeX-Inserter.exe.sha256" -Raw
-          $expected = ($line -split '\s+')[0]
-          $actual = (Get-FileHash "dist\LaTeX-Inserter.exe" -Algorithm SHA256).Hash.ToLower()
-          if ($expected -ne $actual) { throw "SHA256 mismatch" }
+    - name: Verify SHA256
+      shell: pwsh
+      run: |
+        $line = Get-Content "dist\LaTeX-Inserter-setup.exe.sha256" -Raw
+        $expected = ($line -split '\s+')[0]
+        $actual = (Get-FileHash "dist\LaTeX-Inserter-setup.exe" -Algorithm SHA256).Hash.ToLower()
+        if ($expected -ne $actual) { throw "SHA256 mismatch" }
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/LaTeX-Inserter.exe
-            dist/update_helper.exe
-            dist/LaTeX-Inserter.exe.sha256
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/LaTeX-Inserter-setup.exe
+          dist/LaTeX-Inserter-setup.exe.sha256
+        generate_release_notes: true
+        draft: false
+        prerelease: false
