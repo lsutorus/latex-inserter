@@ -27,9 +27,9 @@ python build.py
 Requires admin privileges. The `admin.manifest` forces `requireAdministrator` in the built exe. Build also requires Inno Setup (`choco install innosetup`) for compiling the installer.
 
 ## Versioning & Release
-- Version tracked in `main.py` as `__version__ = "1.2.0"` (semver)
+- Version tracked in `main.py` as `__version__ = "x.y.z"` (semver) — always match current release
 - Bump `__version__` before tagging a release
-- Tag format: `v1.2.0`. Push tag → GitHub Actions builds + publishes release
+- Tag format: `vx.y.z`. Push tag → GitHub Actions builds + publishes release
 - Release assets: `LaTeX-Inserter-setup.exe`, `LaTeX-Inserter-setup.exe.sha256`
 - To release: `git tag v1.x.x && git push origin v1.x.x`
 
@@ -72,7 +72,7 @@ Requires admin privileges. The `admin.manifest` forces `requireAdministrator` in
 - Escape → hide
 - Draggable by clicking outside input box
 - `force_foreground_qt_window()`: uses Win32 `AttachThreadInput` + `SetForegroundWindow` to steal focus from other apps
-- Version label: small gray text `v1.2.0` at bottom-left of overlay (7pt, `#666`, 12px height)
+- Version label: small gray text showing current `__version__` at bottom-left of overlay (7pt, `#666`, 12px height)
 
 ### Tray menu structure
 ```
@@ -102,13 +102,13 @@ Both dialogs extend `_FramelessDialog` — a base class providing:
 
 **UpToDateDialog** — shown when already up to date:
 - Bold heading "You are running the latest version"
-- Subtitle "LaTeX Inserter v1.2.0" (current version, non-bold, gray)
+- Subtitle shows current version, e.g. "LaTeX Inserter v1.3.1" (non-bold, gray)
 - Big green OK button (`#2d7d46`, hover `#3da85a`, 40px height, bold)
 - Accepts `current_version` arg
 
 **UpdateDialog** — shown when update available:
 - Bold heading "Version X.Y.Z is available"
-- Subtitle "Current: LaTeX Inserter v1.2.0"
+- Subtitle shows current version, e.g. "Current: LaTeX Inserter v1.3.1"
 - Changelog rendered as Markdown with orange links (`#f90` via `QPalette.LinkText`)
 - Blue "Install Update" button (`#0078d7`, hover `#1a8ae8`)
 - "Later" button, progress bar, status label
