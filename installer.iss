@@ -21,7 +21,7 @@ SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
 CloseApplications=force
-SetupIconFile=LaTeX-inserter-icon.ico
+SetupIconFile=LaTeX-Inserter-icon-final.ico
 
 ; Disable license page (no EULA)
 DisableReadyPage=yes

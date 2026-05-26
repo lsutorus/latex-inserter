@@ -7,7 +7,7 @@ import re
 import unicodeitplus
 
 # --- CONFIGURATION ---
-ICON_FILENAME = "LaTeX-inserter-icon.ico"
+ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
 
 
 # --- Step 1: Clean up old build files ---

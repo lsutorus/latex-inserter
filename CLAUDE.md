@@ -45,13 +45,13 @@ Requires admin privileges. The `admin.manifest` forces `requireAdministrator` in
 | `.github/workflows/release.yml` | Tag-triggered CI: build + SHA256 + publish GitHub Release |
 
 ### Entry flow (main.py)
-`if __name__` → check admin → `QApplication` (with window icon set from `LaTeX-inserter-icon.ico`) → `AppManager` → `QSystemTrayIcon` with context menu.
+`if __name__` → check admin → `QApplication` (with window icon set from `LaTeX-Inserter-icon-final.ico`) → `AppManager` → `QSystemTrayIcon` with context menu.
 
 ### Constants (module-level in main.py)
 - `__version__` — semver string
 - `APP_DATA_FOLDER` — `"LaTeX Inserter"`
 - `CUSTOM_MAPPINGS_FILENAME` — `"custom_mappings.txt"`
-- `ICON_FILENAME` — `"LaTeX-inserter-icon.ico"` (used by both overlay and QApplication. Source file is `LaTeX-Inserter-icon-final.ico` — copied to `LaTeX-inserter-icon.ico` because PyInstaller and Inno Setup reference this filename)
+- `ICON_FILENAME` — `"LaTeX-Inserter-icon-final.ico"` (used by both overlay and QApplication)
 
 ### AppManager (QObject)
 - Owns hotkey polling (`QTimer` every 50ms checking `keyboard.is_pressed`)
@@ -65,7 +65,7 @@ Requires admin privileges. The `admin.manifest` forces `requireAdministrator` in
 
 ### LaTeXOverlay (QWidget)
 - Frameless, translucent, always-on-top
-- Window icon set from `LaTeX-inserter-icon.ico` (appears in taskbar when overlay is visible)
+- Window icon set from `LaTeX-Inserter-icon-final.ico` (appears in taskbar when overlay is visible)
 - `QLineEdit` input + `QLabel` preview + `QListWidget` autocomplete popup + small version label (bottom-left)
 - Real-time preview on every keystroke via `update_preview` → `replace_latex_with_unicode`
 - Enter → hide overlay, activate previous window, clipboard + Ctrl+V paste

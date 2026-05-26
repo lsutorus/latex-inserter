@@ -71,7 +71,7 @@ def force_foreground_qt_window(widget):
 __version__ = "1.3.0"
 APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
-ICON_FILENAME = "LaTeX-inserter-icon.ico"
+ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
 
 # This is the exact grammar used by the unicodeitplus library.
 # By using it, we ensure our custom parser behaves identically.
