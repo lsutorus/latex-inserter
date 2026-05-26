@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="LaTeX-Inserter-icon-final-png.png" width="128" height="128" alt="LaTeX Inserter logo">
+</div>
+
 # LaTeX Inserter
 
 A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents anywhere. Press **Ctrl+Alt+M**, type your LaTeX, hit Enter — done.
@@ -9,7 +13,6 @@ A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents
 3. See the Unicode preview in real time
 4. Press **Enter** — the Unicode is copied to clipboard and auto-pasted into whatever window you were in
 
-![Overlay screenshot](docs/overlay.png)
 
 ## Install
 

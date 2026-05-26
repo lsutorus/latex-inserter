@@ -51,7 +51,7 @@ Requires admin privileges. The `admin.manifest` forces `requireAdministrator` in
 - `__version__` — semver string
 - `APP_DATA_FOLDER` — `"LaTeX Inserter"`
 - `CUSTOM_MAPPINGS_FILENAME` — `"custom_mappings.txt"`
-- `ICON_FILENAME` — `"LaTeX-inserter-icon.ico"` (used by both overlay and QApplication)
+- `ICON_FILENAME` — `"LaTeX-inserter-icon.ico"` (used by both overlay and QApplication. Source file is `LaTeX-Inserter-icon-final.ico` — copied to `LaTeX-inserter-icon.ico` because PyInstaller and Inno Setup reference this filename)
 
 ### AppManager (QObject)
 - Owns hotkey polling (`QTimer` every 50ms checking `keyboard.is_pressed`)
