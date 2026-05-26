@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="LaTeX-Inserter-icon-final-png.png" width="128" height="128" alt="LaTeX Inserter logo">
+  <img src="LaTeX-Inserter-icon-final-png.png" width="256" height="256" alt="LaTeX Inserter logo">
 </div>
 
 # LaTeX Inserter
@@ -9,36 +9,25 @@ A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents
 ## How it works
 
 1. **Ctrl+Alt+M** opens a floating overlay near your cursor
-2. Type LaTeX — e.g. `\alpha`, `\sqrt{x^2}`, `\sum`, `\Rightarrow`
+2. Type LaTeX: e.g. `\alpha`, `\sqrt{x^2}`, `\sum`, `\Rightarrow`
 3. See the Unicode preview in real time
-4. Press **Enter** — the Unicode is copied to clipboard and auto-pasted into whatever window you were in
+4. Press **Enter**: the Unicode is copied to clipboard and auto-pasted into whatever window you were in
 
 
 ## Install
-
+> Requires Windows 10 or later. The app runs as admin (needed for global hotkey detection).
 1. Go to [Releases](https://github.com/lsutorus/latex-inserter/releases/latest)
 2. Download **LaTeX-Inserter-setup.exe**
-3. Run it — the installer walks you through the rest
+3. Run it. The installer walks you through the rest
    - Default install location: `C:\Program Files\LaTeX Inserter`
    - Choose Desktop and/or Start Menu shortcuts
    - App launches automatically when setup finishes
 
-> Requires Windows 10 or later. The app runs as admin (needed for global hotkey detection).
-
-## Usage
-
-### Basic
-
-| Action | How |
-|--------|-----|
-| Open overlay | **Ctrl+Alt+M** |
-| Insert LaTeX | Type, then **Enter** |
-| Cancel | **Escape** |
-| Move overlay | Click and drag outside the input box |
+## Features
 
 ### Autocomplete
 
-While typing, any `\command` prefix triggers an autocomplete popup showing matching LaTeX commands and their Unicode symbols. Use **Up/Down arrows** to navigate, **Enter** to select.
+While typing, any `\command` prefix triggers an autocomplete dropdown showing matching LaTeX commands and their Unicode symbols. Use **Up/Down arrows** to navigate, **Enter** to select.
 
 ### Custom mappings
 
@@ -49,6 +38,8 @@ Right-click the tray icon → **Edit Custom Mappings...** to open your personal 
 ```
 
 Lines starting with `#` are comments. Your custom mappings override built-in ones. Click **Reload Mappings** in the tray menu to apply changes without restarting.
+
+Custom mappings are saved between updates.
 
 ### Updating
 
@@ -62,7 +53,7 @@ Right-click the tray icon → **Check for Updates...**. If a new version is avai
 | `\beta` | β |
 | `\sqrt{x^2}` | √(x²) |
 | `\sum` | ∑ |
-| `\Rightarrow` | ⇒ |
+| `\longrightarrow` | ⟶ |
 | `\infty` | ∞ |
 | `\partial` | ∂ |
 | `\nabla` | ∇ |
