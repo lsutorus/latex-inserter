@@ -70,7 +70,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
@@ -568,23 +568,27 @@ class AppManager(QObject):
             QMessageBox.warning(None, "Update Check Failed",
                                 f"Could not check for updates:\n{e}")
             return
-        if update_info is None:
-            UpToDateDialog(__version__).exec_()
-            return
-        current = parse_version(__version__)
-        latest = parse_version(update_info.version)
-        if latest <= current:
-            UpToDateDialog(__version__).exec_()
-            return
-        dialog = UpdateDialog(update_info, current_version=__version__)
-        if dialog.exec_() == 1:  # QDialog.Accepted
-            from updater import perform_update
-            try:
-                perform_update(update_info)
-            except Exception as e:
-                QMessageBox.critical(None, "Update Failed", f"Update failed:\n{e}")
+        try:
+            if update_info is None:
+                UpToDateDialog(__version__).exec_()
                 return
-            QApplication.quit()
+            current = parse_version(__version__)
+            latest = parse_version(update_info.version)
+            if latest <= current:
+                UpToDateDialog(__version__).exec_()
+                return
+            dialog = UpdateDialog(update_info, current_version=__version__)
+            if dialog.exec_() == 1:  # QDialog.Accepted
+                from updater import perform_update
+                try:
+                    perform_update(update_info)
+                except Exception as e:
+                    QMessageBox.critical(None, "Update Failed", f"Update failed:\n{e}")
+                    return
+                QApplication.quit()
+        except Exception as e:
+            QMessageBox.warning(None, "Update Check Failed",
+                                f"An error occurred during the update check:\n{e}")
 
 
 if __name__ == "__main__":

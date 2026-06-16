@@ -58,6 +58,9 @@ def fetch_latest_release(current_version):
         if e.code == 404:
             return None  # no releases yet
         raise
+    except (urllib.error.URLError, json.JSONDecodeError, UnicodeDecodeError):
+        # Network failure, DNS error, malformed response, or encoding issue
+        raise
 
     tag_name = data.get("tag_name", "")
     remote_version = tag_name.lstrip("v")
@@ -86,7 +89,9 @@ def fetch_latest_release(current_version):
 
 def download_file(url, dest, progress_callback=None):
     """Download url to dest. Reports progress via callback(0.0-1.0)."""
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    dest_dir = os.path.dirname(dest)
+    if dest_dir:
+        os.makedirs(dest_dir, exist_ok=True)
     ctx = ssl.create_default_context()
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -337,7 +342,7 @@ class UpdateDialog(_FramelessDialog):
         changelog_label.setTextFormat(Qt.MarkdownText)
         changelog_label.setStyleSheet("color: #aaa; margin: 8px 0;")
         palette = changelog_label.palette()
-        palette.setColor(QPalette.LinkText, QColor("#f90"))
+        palette.setColor(QPalette.Link, QColor("#f90"))
         changelog_label.setPalette(palette)
         layout.addWidget(changelog_label)
 
