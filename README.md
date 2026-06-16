@@ -3,7 +3,7 @@
 </div>
 
 <div align="center">
-  <a href="https://github.com/lsutorus/latex-inserter/releases/latest"><img src="https://img.shields.io/github/v/release/lsutorus/latex-inserter?color=800f00&style=plastic" alt="GitHub release"></a>&nbsp;<img src="https://img.shields.io/badge/OS-Windows-blue?style=plastic&logo=windows&color=0a348f" alt="Windows OS">&nbsp;<img src="https://img.shields.io/badge/Python-3776AB?style=plastic&logo=python&logoColor=white" alt="Python">&nbsp;<a href="https://github.com/lsutorus/latex-inserter/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-C41E3A" alt="License"></a>
+  <a href="https://github.com/lsutorus/latex-inserter/releases/latest"><img src="https://img.shields.io/github/v/release/lsutorus/latex-inserter?color=800f00&style=plastic" alt="GitHub release"></a>&nbsp;<img src="https://img.shields.io/badge/OS-Windows-blue?style=plastic&logo=windows&color=0a348f" alt="Windows OS">&nbsp;<a href="https://github.com/lsutorus/latex-inserter/search?l=python"><img src="https://img.shields.io/badge/Python-3776AB?style=plastic&logo=python&logoColor=white" alt="Python"></a>&nbsp;<a href="https://github.com/lsutorus/latex-inserter/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-C41E3A" alt="License"></a>
 </div>
 
 # LaTeX Inserter
