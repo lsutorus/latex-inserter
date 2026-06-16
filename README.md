@@ -25,25 +25,9 @@ A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents
 
 ## Features
 
-### Autocomplete
-
-While typing, any `\command` prefix triggers an autocomplete dropdown showing matching LaTeX commands and their Unicode symbols. Use **Up/Down arrows** to navigate, **Enter** to select.
-
-### Custom mappings
-
-Right-click the tray icon → **Edit Custom Mappings...** to open your personal mappings file. Add one mapping per line:
-
-```
-\mycommand ⚡
-```
-
-Lines starting with `#` are comments. Your custom mappings override built-in ones. Click **Reload Mappings** in the tray menu to apply changes without restarting.
-
-Custom mappings are saved between updates.
-
-### Updating
-
-Right-click the tray icon → **Check for Updates...**. If a new version is available, click **Install Update** — the app downloads, verifies, and updates itself automatically.
+- Autocomplete
+- Ability to edit/create mappings
+- Easy updating
 
 ## Examples
 
