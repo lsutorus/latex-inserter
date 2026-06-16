@@ -2,9 +2,20 @@
   <img src="LaTeX-Inserter-icon-final-png.png" width="256" height="256" alt="LaTeX Inserter logo">
 </div>
 
+<div align="center">
+<a href="https://github.com/lsutorus/latex-inserter/releases/latest">
+  <img src="https://img.shields.io/github/v/release/lsutorus/latex-inserter?color=800f00&style=flat-square" alt="GitHub release">
+  <img src="https://img.shields.io/badge/OS-Windows-blue?style=flat-square&logo=windows&color=0a348f" alt="Windows OS">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+</a>
+<a href="https://github.com/lsutorus/latex-inserter/blob/master/LICENSE">
+  <img src="https://img.shields.io/github/license/lsutorus/latex-inserter?style=flat-square&color=C41E3A" alt="License">
+</a>
+</div>
+
 # LaTeX Inserter
 
-A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents anywhere. Press **Ctrl+Alt+M**, type your LaTeX, hit Enter — done.
+A Windows system-tray app that lets you type LaTeX and paste Unicode equivalents anywhere. Press **Ctrl+Alt+M**, type LaTeX, hit Enter--unicode equivalent will paste and copy to clipboard.
 
 ## How it works
 
