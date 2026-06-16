@@ -17,12 +17,14 @@ import unicodeitplus
 import unicodeitplus.data
 from unicodeitplus.transform import ToUnicode
 
-from PyQt5.QtCore import Qt, QObject, QTimer, QPoint
+from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer, QPoint
 from PyQt5.QtGui import (QIcon, QFont, QPalette, QColor, QPixmap, QPainter, QBrush,
                          QPen, QCursor)
 from PyQt5.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QAction, QWidget,
                              QVBoxLayout, QLineEdit, QLabel, QSizePolicy, QListWidget,
-                             QListWidgetItem, QMessageBox)
+                             QListWidgetItem, QMessageBox, QDialog)
+from settings import (Settings, DEFAULT_HOTKEY, format_hotkey, normalize_hotkey,
+is_valid_hotkey, is_startup_enabled, set_startup_enabled, HotkeyDialog)
 
 
 def force_foreground_qt_window(widget):
@@ -68,7 +70,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
@@ -327,13 +329,23 @@ class LaTeXOverlay(QWidget):
             print(f"Failed to insert Unicode for '{latex_code}': {e}")
 
 
-# --- Global Hotkey Polling and Application Management ---
+# --- Global Hotkey and Application Management ---
 class AppManager(QObject):
+    hotkey_triggered = pyqtSignal()
+
     def __init__(self, app):
         super().__init__()
         self.app = app
+        self.settings = Settings(APP_DATA_FOLDER)
         self.overlay_window = None
-        self.hotkey_was_down = False
+        self.show_action = None
+        self.tray_icon = None
+
+        self._hotkey_str = self.settings.get("hotkey")
+        if not is_valid_hotkey(self._hotkey_str):
+            self._hotkey_str = DEFAULT_HOTKEY
+            self.settings.set("hotkey", self._hotkey_str)
+
         self.original_default_commands = unicodeitplus.data.COMMANDS.copy()
         self.original_has_arg = unicodeitplus.data.HAS_ARG.copy()
         self.custom_parser = None
@@ -347,10 +359,9 @@ class AppManager(QObject):
             from updater import UPDATE_TEMP_DIR
             if os.path.exists(UPDATE_TEMP_DIR):
                 shutil.rmtree(UPDATE_TEMP_DIR, ignore_errors=True)
-        self.timer = QTimer()
-        self.timer.setInterval(50)
-        self.timer.timeout.connect(self.check_hotkey)
-        self.timer.start()
+
+        self.hotkey_triggered.connect(self.toggle_overlay_visibility)
+        self._register_hotkey()
 
     def _build_custom_parser(self):
         """
@@ -433,18 +444,32 @@ class AppManager(QObject):
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Could not open mappings file:\n{e}")
 
-    def check_hotkey(self):
+    def _register_hotkey(self):
+        keyboard.add_hotkey(self._hotkey_str, self._on_hotkey, suppress=False)
+
+    def _unregister_hotkey(self):
+        keyboard.remove_hotkey(self._hotkey_str)
+
+    def _on_hotkey(self):
+        self.hotkey_triggered.emit()
+
+    def change_hotkey(self):
+        dialog = HotkeyDialog(self._hotkey_str)
+        self._unregister_hotkey()
         try:
-            keys_are_down = (
-                    keyboard.is_pressed('ctrl') and
-                    keyboard.is_pressed('alt') and
-                    keyboard.is_pressed('m')
-            )
-        except ImportError:
-            keys_are_down = False
-        if keys_are_down and not self.hotkey_was_down:
-            self.toggle_overlay_visibility()
-        self.hotkey_was_down = keys_are_down
+            if dialog.exec_() == QDialog.Accepted and dialog.new_hotkey:
+                new_hotkey = normalize_hotkey(dialog.new_hotkey)
+                self._hotkey_str = new_hotkey
+                self.settings.set("hotkey", new_hotkey)
+                if self.show_action is not None:
+                    self.show_action.setText(
+                        f"Show/Hide Overlay ({format_hotkey(new_hotkey)})"
+                    )
+        finally:
+            self._register_hotkey()
+
+    def cleanup(self):
+        keyboard.unhook_all()
 
     def toggle_overlay_visibility(self):
         if self.overlay_window is None:
@@ -490,6 +515,51 @@ class AppManager(QObject):
                 QTimer.singleShot(delay_ms, lambda: (force_foreground_qt_window(win),
                                                      win.input_box.setFocus(Qt.ActiveWindowFocusReason)))
 
+    def setup_tray(self):
+        self.tray_icon = QSystemTrayIcon()
+        try:
+            self.tray_icon.setIcon(QIcon(resource_path(ICON_FILENAME)))
+        except Exception as e:
+            print(f"Could not load tray icon: {e}")
+
+        self.tray_icon.setVisible(True)
+        self.tray_icon.setToolTip("LaTeX Inserter")
+
+        self.tray_menu = QMenu()
+
+        self.show_action = QAction(
+            f"Show/Hide Overlay ({format_hotkey(self._hotkey_str)})",
+            self.tray_menu,
+        )
+        self.show_action.triggered.connect(self.toggle_overlay_visibility)
+        self.tray_menu.addAction(self.show_action)
+        self.tray_menu.addSeparator()
+
+        self.edit_action = QAction("Edit Custom Mappings...", self.tray_menu)
+        self.edit_action.triggered.connect(self.edit_custom_mappings)
+        self.tray_menu.addAction(self.edit_action)
+
+        self.reload_action = QAction("Reload Mappings", self.tray_menu)
+        self.reload_action.triggered.connect(self.load_mappings)
+        self.tray_menu.addAction(self.reload_action)
+        self.tray_menu.addSeparator()
+
+        self.hotkey_action = QAction("Change Hotkey...", self.tray_menu)
+        self.hotkey_action.triggered.connect(self.change_hotkey)
+        self.tray_menu.addAction(self.hotkey_action)
+        self.tray_menu.addSeparator()
+
+        self.update_action = QAction("Check for Updates...", self.tray_menu)
+        self.update_action.triggered.connect(self.check_for_updates)
+        self.tray_menu.addAction(self.update_action)
+        self.tray_menu.addSeparator()
+
+        self.quit_action = QAction("Quit", self.tray_menu)
+        self.quit_action.triggered.connect(self.app.quit)
+        self.tray_menu.addAction(self.quit_action)
+
+        self.tray_icon.setContextMenu(self.tray_menu)
+
     def check_for_updates(self):
         from updater import fetch_latest_release, parse_version, UpdateDialog, UpToDateDialog
         try:
@@ -534,38 +604,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     manager = AppManager(app)
-    tray_icon = QSystemTrayIcon()
-    try:
-        icon_path = resource_path(ICON_FILENAME)
-        tray_icon.setIcon(QIcon(icon_path))
-    except Exception as e:
-        print(f"Could not load icon from path '{icon_path}': {e}")
-
-    tray_icon.setVisible(True)
-    menu = QMenu()
-    show_action = QAction("Show/Hide Overlay (Ctrl+Alt+M)")
-    show_action.triggered.connect(manager.toggle_overlay_visibility)
-    menu.addAction(show_action)
-    menu.addSeparator()
-
-    # FIX: Corrected the variable name to be consistent (one underscore)
-    edit_action = QAction("Edit Custom Mappings...")
-    edit_action.triggered.connect(manager.edit_custom_mappings)
-    menu.addAction(edit_action)
-
-    reload_action = QAction("Reload Mappings")
-    reload_action.triggered.connect(manager.load_mappings)
-    menu.addAction(reload_action)
-    menu.addSeparator()
-
-    update_action = QAction("Check for Updates...")
-    update_action.triggered.connect(manager.check_for_updates)
-    menu.addAction(update_action)
-    menu.addSeparator()
-    quit_action = QAction("Quit")
-    quit_action.triggered.connect(app.quit)
-    menu.addAction(quit_action)
-    tray_icon.setContextMenu(menu)
-    tray_icon.setToolTip("LaTeX Inserter")
-    print("LaTeX Inserter is running. Press Ctrl+Alt+M to open the overlay.")
+    manager.setup_tray()
+    app.aboutToQuit.connect(manager.cleanup)
+    print(f"LaTeX Inserter is running. Press {format_hotkey(manager._hotkey_str)} to open the overlay.")
     sys.exit(app.exec_())
