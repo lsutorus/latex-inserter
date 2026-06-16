@@ -187,3 +187,11 @@ Both dialogs extend `_FramelessDialog` — a base class providing:
 - **No local-only QActions in QMenu** — when building `QMenu` for `QSystemTrayIcon`, all `QAction` objects must be stored as `self.*` attributes on the parent object AND pass the menu as parent in the `QAction(text, parent)` constructor. Local variables get Python-GC'd, causing actions to disappear from the menu at runtime. This is a PyQt bug where Python wrapper GC destroys the underlying Qt object even when `QMenu.addAction` should hold a C++ reference.
 - **Unregister hotkey before recording** — `HotkeyRecorder` uses `keyboard.hook()` which suppresses all events. If `add_hotkey` is still active during recording, hook ordering can cause the active hotkey to interfere. Always `remove_hotkey` before recording, `add_hotkey` in `finally` after.
 - **Canonical hotkey sort order** — `normalize_hotkey` must sort keys deterministically (modifiers first in fixed order, then non-modifiers alphabetically). Without this, hotkey strings from different press orders (e.g. `alt+ctrl+m` vs `ctrl+alt+m`) won't match the blocklist or each other.
+
+## Best Practices
+
+- **Testing updater UI without pushing dummy releases** — to test the update-check or update-dialog UI, temporarily set `__version__` to an artificially low value (e.g. `"0.0.1"`) in the local source, then run `python main.py`. The fixed local code will detect the existing higher-versioned remote release and show the update UI. Revert `__version__` before committing and building the release. Never push fake/dummy tags or releases to GitHub just to trigger the update UI.
+
+## Anti-patterns (updater)
+
+- **Updater bootstrapping paradox** — never instruct the user to test a bug fix in the auto-updater by pushing a new release and running the old installed executable. The old binary still contains the bug — it will crash the same way. Similarly, never push dummy/fake releases to GitHub just to trigger the update UI. See Best Practices above for the correct testing approach.
