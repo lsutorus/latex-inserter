@@ -128,7 +128,7 @@ Both dialogs extend `_FramelessDialog` — a base class providing:
 **UpdateDialog** — shown when update available:
 - Bold heading "Version X.Y.Z is available"
 - Subtitle shows current version, e.g. "Current: LaTeX Inserter v1.3.1"
-- Changelog rendered as Markdown with orange links (`#f90` via `QPalette.LinkText`)
+- Changelog rendered as Markdown with orange links (`#f90` via `QPalette.Link`)
 - Blue "Install Update" button (`#0078d7`, hover `#1a8ae8`)
 - "Later" button, progress bar, status label
 - Accepts `update_info` + `current_version` args
