@@ -70,7 +70,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
@@ -557,7 +557,7 @@ class AppManager(QObject):
         self.hotkey_action.triggered.connect(self.change_hotkey)
         self.tray_menu.addAction(self.hotkey_action)
 
-        self.startup_action = QAction("Start on Startup", self.tray_menu)
+        self.startup_action = QAction("Start on System Startup", self.tray_menu)
         self.startup_action.setCheckable(True)
         self.startup_action.setChecked(self._start_on_startup)
         self.startup_action.triggered.connect(self._toggle_startup)

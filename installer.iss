@@ -41,7 +41,7 @@ Name: "{group}\LaTeX Inserter"; Filename: "{app}\LaTeX-Inserter.exe"; Tasks: sta
 Name: "{autodesktop}\LaTeX Inserter"; Filename: "{app}\LaTeX-Inserter.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\LaTeX-Inserter.exe"; Description: "&Launch LaTeX Inserter"; Flags: nowait postinstall skipifsilent runascurrentuser
+Filename: "{app}\LaTeX-Inserter.exe"; Description: "&Launch LaTeX Inserter"; Flags: nowait postinstall runascurrentuser
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
