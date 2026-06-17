@@ -70,7 +70,7 @@ def force_foreground_qt_window(widget):
         return
 
 # --- Constants ---
-__version__ = "1.4.1"
+__version__ = "1.5.0"
 APP_DATA_FOLDER = "LaTeX Inserter"
 CUSTOM_MAPPINGS_FILENAME = "custom_mappings.txt"
 ICON_FILENAME = "LaTeX-Inserter-icon-final.ico"
@@ -346,6 +346,8 @@ class AppManager(QObject):
             self._hotkey_str = DEFAULT_HOTKEY
             self.settings.set("hotkey", self._hotkey_str)
 
+        self._start_on_startup = self.settings.get("start_on_startup")
+
         self.original_default_commands = unicodeitplus.data.COMMANDS.copy()
         self.original_has_arg = unicodeitplus.data.HAS_ARG.copy()
         self.custom_parser = None
@@ -468,6 +470,13 @@ class AppManager(QObject):
         finally:
             self._register_hotkey()
 
+    def _toggle_startup(self, checked):
+        if set_startup_enabled(checked):
+            self._start_on_startup = checked
+            self.settings.set("start_on_startup", checked)
+        else:
+            self.startup_action.setChecked(not checked)
+
     def cleanup(self):
         keyboard.unhook_all()
 
@@ -547,6 +556,12 @@ class AppManager(QObject):
         self.hotkey_action = QAction("Change Hotkey...", self.tray_menu)
         self.hotkey_action.triggered.connect(self.change_hotkey)
         self.tray_menu.addAction(self.hotkey_action)
+
+        self.startup_action = QAction("Start on Startup", self.tray_menu)
+        self.startup_action.setCheckable(True)
+        self.startup_action.setChecked(self._start_on_startup)
+        self.startup_action.triggered.connect(self._toggle_startup)
+        self.tray_menu.addAction(self.startup_action)
         self.tray_menu.addSeparator()
 
         self.update_action = QAction("Check for Updates...", self.tray_menu)
